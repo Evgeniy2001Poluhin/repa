@@ -1,15 +1,19 @@
-import java.io.*;
+// src/Wallet.java
+import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
-public class Wallet {
+public class Wallet implements Serializable {
     private double balance;
     private List<Transaction> transactions;
+    private Map<String, Double> budgets; // Хранение бюджетов по категориям
 
     public Wallet() {
         this.balance = 0.0;
         this.transactions = new ArrayList<>();
-        loadTransactions();
+        this.budgets = new HashMap<>(); // Инициализация бюджета
     }
 
     public void addTransaction(Transaction transaction) {
@@ -19,7 +23,6 @@ public class Wallet {
         } else {
             balance -= transaction.getAmount();
         }
-        saveTransactions();
     }
 
     public void removeTransaction(int index) {
@@ -31,7 +34,6 @@ public class Wallet {
                 balance += transaction.getAmount();
             }
             transactions.remove(index);
-            saveTransactions();
         } else {
             System.out.println("Неверный индекс транзакции.");
         }
@@ -45,29 +47,15 @@ public class Wallet {
         return transactions;
     }
 
-    private void saveTransactions() {
-        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream("transactions.dat"))) {
-            oos.writeObject(transactions);
-        } catch (IOException e) {
-            System.out.println("Ошибка при сохранении транзакций: " + e.getMessage());
-        }
+    public void setBudget(String category, double budget) {
+        budgets.put(category, budget);
     }
 
-    @SuppressWarnings("unchecked")
-    private void loadTransactions() {
-        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream("transactions.dat"))) {
-            transactions = (List<Transaction>) ois.readObject();
-            for (Transaction transaction : transactions) {
-                if (transaction.getType().equals("income")) {
-                    balance += transaction.getAmount();
-                } else {
-                    balance -= transaction.getAmount();
-                }
-            }
-        } catch (IOException | ClassNotFoundException e) {
-            System.out.println("Ошибка при загрузке транзакций: " + e.getMessage());
-        }
+    public Map<String, Double> getBudgets() {
+        return budgets;
     }
 
-    // Другие методы для управления транзакциями
-} 
+    public double getBudget(String category) {
+        return budgets.getOrDefault(category, -1.0); // Возвращает -1, если категория не найдена
+    }
+}

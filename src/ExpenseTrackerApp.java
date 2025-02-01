@@ -6,6 +6,7 @@ import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
+import java.io.InputStreamReader;
 
 public class ExpenseTrackerApp {
     private Wallet wallet;
@@ -15,21 +16,52 @@ public class ExpenseTrackerApp {
 
     public ExpenseTrackerApp() {
         wallet = new Wallet();
-        scanner = new Scanner(System.in);
+        scanner = new Scanner(new InputStreamReader(System.in, java.nio.charset.StandardCharsets.UTF_8));
+        loadUsers();
     }
 
     public void start() {
+        int choice;
+        do {
+            System.out.println("1. Регистрация");
+            System.out.println("2. Вход");
+            System.out.println("3. Выход");
+            System.out.print("Выберите опцию: ");
+            choice = scanner.nextInt();
+            scanner.nextLine();
+
+            switch (choice) {
+                case 1:
+                    registerUser();
+                    break;
+                case 2:
+                    if (loginUser()) {
+                        userMenu();
+                    }
+                    break;
+                case 3:
+                    System.out.println("Выход из приложения.");
+                    break;
+                default:
+                    System.out.println("Неверный выбор. Попробуйте снова.");
+            }
+        } while (choice != 3);
+    }
+
+    private void userMenu() {
         int choice;
         do {
             System.out.println("1. Добавить доход");
             System.out.println("2. Добавить расход");
             System.out.println("3. Показать баланс");
             System.out.println("4. Показать все транзакции");
-            System.out.println("5. Удалить транзакцию");
-            System.out.println("6. Выход");
+            System.out.println("5. Установить бюджет для категории");
+            System.out.println("6. Показать бюджет по категориям");
+            System.out.println("7. Удалить транзакцию");
+            System.out.println("8. Выход");
             System.out.print("Выберите опцию: ");
             choice = scanner.nextInt();
-            scanner.nextLine(); // Очистка буфера
+            scanner.nextLine();
 
             switch (choice) {
                 case 1:
@@ -45,15 +77,21 @@ public class ExpenseTrackerApp {
                     showTransactions();
                     break;
                 case 5:
-                    removeTransaction();
+                    setBudget();
                     break;
                 case 6:
-                    System.out.println("Выход из приложения.");
+                    showBudgets();
+                    break;
+                case 7:
+                    removeTransaction();
+                    break;
+                case 8:
+                    System.out.println("Выход из меню пользователя.");
                     break;
                 default:
                     System.out.println("Неверный выбор. Попробуйте снова.");
             }
-        } while (choice != 6);
+        } while (choice != 8);
     }
 
     private void addTransaction(String type) {
@@ -67,11 +105,18 @@ public class ExpenseTrackerApp {
                 System.out.println("Сумма должна быть положительной. Попробуйте снова.");
             }
         } while (amount <= 0);
-        scanner.nextLine(); // Очистка буфера
+        scanner.nextLine();
 
         Transaction transaction = new Transaction(description, amount, type);
         wallet.addTransaction(transaction);
         System.out.println("Транзакция добавлена.");
+
+        if (type.equals("expense")) {
+            double budget = wallet.getBudget(description);
+            if (budget != -1 && amount > budget) {
+                System.out.println("Внимание! Превышен лимит бюджета для категории: " + description);
+            }
+        }
     }
 
     private void showBalance() {
@@ -85,6 +130,26 @@ public class ExpenseTrackerApp {
             System.out.println(i + ": " + t.getType() + " - " + t.getDescription() + " - " + t.getAmount());
         }
     }
+
+    private void setBudget() {
+    System.out.print("Введите название категории: ");
+    String category = scanner.nextLine();
+    System.out.print("Введите бюджет для категории: ");
+    double budget = scanner.nextDouble();
+    scanner.nextLine(); // Очистка буфера
+
+    // Убедитесь, что метод setBudget существует в классе Wallet
+    wallet.setBudget(category, budget);
+    System.out.println("Бюджет установлен для категории: " + category);
+}
+
+private void showBudgets() {
+    System.out.println("Бюджеты по категориям:");
+    // Убедитесь, что метод getBudgets существует в классе Wallet
+    for (String category : wallet.getBudgets().keySet()) {
+        System.out.println(category + ": " + wallet.getBudgets().get(category));
+    }
+}
 
     private void removeTransaction() {
         showTransactions();
@@ -101,6 +166,7 @@ public class ExpenseTrackerApp {
         String password = scanner.nextLine();
         users.add(new User(username, password));
         System.out.println("Пользователь зарегистрирован.");
+        saveUsers();
     }
 
     private boolean loginUser() {
@@ -134,6 +200,4 @@ public class ExpenseTrackerApp {
             System.out.println("Ошибка при загрузке пользователей: " + e.getMessage());
         }
     }
-
-    // Другие методы для управления приложением
 } 
